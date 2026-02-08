@@ -1,0 +1,20 @@
+import requests
+import pandas as pd
+from sqlalchemy import create_engine
+
+def ingest_fake_api_data(api_url: str, db_url: str):
+    response = requests.get(api_url)
+    records = response.json()["records"]
+
+    df = pd.DataFrame(records)
+    df["date"] = pd.to_datetime(df["date"])
+
+    engine = create_engine(db_url)
+    df.to_sql("raw_fake_data", engine, if_exists="replace", index=False)
+    print(f"✅ Loaded {len(df)} fake rows into table 'raw_fake_data'")
+
+if __name__ == "__main__":
+    api_url = "http://localhost:8000/fake_weather?days=30"
+    db_url = "postgresql://postgres:Plan10boy%26@localhost:5432/MyDB"
+    ingest_fake_api_data(api_url, db_url)
+
