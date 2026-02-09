@@ -1,12 +1,11 @@
-version: "3.9"
-
+# Infrastructure: Code repository → Container (Database, dbt, Orchestrator, Python Ingestion) → Curated dataset → Reporting
 services:
   db:
     image: postgres:15
     container_name: postgres_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Plan10boy%26
+      POSTGRES_PASSWORD: "Plan10boy&"
       POSTGRES_DB: MyDB
     ports:
       - "5432:5432"
@@ -20,6 +19,25 @@ services:
       - "8000:8000"
     depends_on:
       - db
+
+  # Pipeline: waits for DB + API, then runs ingestion + dbt and exits. Runs automatically on `docker compose up`.
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.pipeline
+    container_name: pipeline
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: "Plan10boy&"
+      DB_NAME: MyDB
+      API_HOST: fastapi_app
+      API_PORT: "8000"
+      WAIT_FOR_SERVICES: "1"
+    depends_on:
+      - db
+      - fastapi_app
 
 volumes:
   pg_data:

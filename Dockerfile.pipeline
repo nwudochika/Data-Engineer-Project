@@ -1,0 +1,11 @@
+# Container: Orchestrator + Python Ingestion + dbt
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+# Run orchestrator (ingestion + dbt)
+CMD ["python", "pipeline/orchestrator.py"]

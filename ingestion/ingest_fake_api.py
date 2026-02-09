@@ -2,9 +2,14 @@ import requests
 import pandas as pd
 from sqlalchemy import create_engine
 
+
 def ingest_fake_api_data(api_url: str, db_url: str):
-    response = requests.get(api_url)
-    records = response.json()["records"]
+    response = requests.get(api_url, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    if "records" not in data:
+        raise ValueError("API response missing 'records' key")
+    records = data["records"]
 
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
