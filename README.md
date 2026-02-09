@@ -6,6 +6,8 @@ Data pipeline: ingest public + FastAPI fake weather data → PostgreSQL → dbt 
 
 **Prerequisites:** Docker Desktop (running), Make, Python 3.10+
 
+After cloning, run all commands **from inside the repo directory** (e.g. `cd Data-Engineer-Project` if the clone created that folder).
+
 ```bash
 make setup
 make run
