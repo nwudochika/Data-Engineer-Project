@@ -4,9 +4,9 @@ services:
     image: postgres:15
     container_name: postgres_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "Plan10boy&"
-      POSTGRES_DB: MyDB
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-MyDB}
     ports:
       - "5432:5432"
     volumes:
@@ -29,9 +29,9 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "5432"
-      DB_USER: postgres
-      DB_PASSWORD: "Plan10boy&"
-      DB_NAME: MyDB
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      DB_NAME: ${POSTGRES_DB:-MyDB}
       API_HOST: fastapi_app
       API_PORT: "8000"
       WAIT_FOR_SERVICES: "1"

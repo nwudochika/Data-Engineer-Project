@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from sqlalchemy import create_engine, text
 
-DB_URL = os.getenv("DB_URL", "postgresql://postgres:Plan10boy%26@localhost:5432/MyDB")
+DB_URL = os.getenv("DB_URL", "postgresql://postgres:changeme@localhost:5432/MyDB")
 
 
 def run_dashboard():

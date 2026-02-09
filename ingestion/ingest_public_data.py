@@ -13,6 +13,6 @@ def ingest_public_data(file_path: str, db_url: str):
 if __name__ == "__main__":
     import os
     _root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    file_path = os.path.join(_root, "data", "DailyDelhiClimateTrain.csv")
-    db_url = "postgresql://postgres:Plan10boy%26@localhost:5432/MyDB"
+    file_path = os.getenv("PUBLIC_DATA_PATH", os.path.join(_root, "data", "DailyDelhiClimateTrain.csv"))
+    db_url = os.getenv("DB_URL", "postgresql://postgres:changeme@localhost:5432/MyDB")
     ingest_public_data(file_path, db_url)

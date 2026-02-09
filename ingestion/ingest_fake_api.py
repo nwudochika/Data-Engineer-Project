@@ -19,7 +19,8 @@ def ingest_fake_api_data(api_url: str, db_url: str):
     print(f"✅ Loaded {len(df)} fake rows into table 'raw_fake_data'")
 
 if __name__ == "__main__":
-    api_url = "http://localhost:8000/fake_weather?days=30"
-    db_url = "postgresql://postgres:Plan10boy%26@localhost:5432/MyDB"
+    import os
+    api_url = os.getenv("API_URL", "http://localhost:8000/fake_weather?days=30")
+    db_url = os.getenv("DB_URL", "postgresql://postgres:changeme@localhost:5432/MyDB")
     ingest_fake_api_data(api_url, db_url)
 

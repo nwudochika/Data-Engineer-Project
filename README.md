@@ -1,88 +1,75 @@
-# Data-Engineer-Project
+# Data Engineer Project
 
-This repository implements the data pipeline and infrastructure described below.
+Data pipeline: ingest public + FastAPI fake weather data → PostgreSQL → dbt (curated view) → reporting.
 
-## Infrastructure (high level)
+## Quick Start (from fresh clone)
 
-- **Code repository**: This repo contains all components.
-- **Data sources**:
-  - **Public dataset** (e.g. Daily Delhi Climate) — provided as CSV; ingested into the database.
-  - **FastAPI fake dataset** — applicant-created; a FastAPI app generates synthetic weather data and the pipeline ingests it.
-- **Container** (Docker Compose) runs:
-  - **Database** (PostgreSQL): stores raw and curated data.
-  - **dbt**: builds the curated, cleaned dataset from raw tables.
-  - **Orchestrator**: runs the pipeline (Python ingestion → dbt).
-  - **Python ingestion**: loads the public CSV and the FastAPI fake data into the database.
-- **Output**: A **curated and cleaned dataset** (view `curated_weather`) used for reporting.
-- **Documentation**: This README and in-code comments describe design and usage.
-- **Reporting**: Applicant’s choice (e.g. `reporting/dashboard.py` — Plotly).
-
-## Prerequisites (Docker)
-
-To run with `docker compose up` you need:
-
-1. **Docker Desktop** installed: [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
-2. **Docker Desktop running** before you run any `docker` or `docker compose` command.
-
-If you see:
-```text
-open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
-```
-then the Docker engine is not running. **Start Docker Desktop** (from the Windows Start menu), wait until it shows "Docker Desktop is running", then run `docker compose up` again.
-
-## How to run
-
-**After changing pipeline or ingestion code**, rebuild the pipeline image:  
-`docker compose build pipeline` then `docker compose up`, or use `docker compose up --build`.
-
-**Option A – Run everything (recommended)**  
-The pipeline waits for the database and FastAPI to be ready, then runs ingestion + dbt and exits.
+**Prerequisites:** Docker Desktop (running), Make, Python 3.10+
 
 ```bash
-docker compose up
+make setup
+make run
 ```
 
-This starts `db`, `fastapi_app`, and `pipeline`. The pipeline container waits until both DB and API respond, then ingests data and runs `dbt run` to create the `curated_weather` view. When the pipeline finishes, its container exits; the DB and API keep running.
+Then (optional): `make test`, `make report`.
 
-**Option B – Run the pipeline manually** (e.g. after starting only DB + API):
+- **make setup**: creates `.venv`, installs Python deps, builds Docker images.
+- **make run**: starts DB + FastAPI + pipeline (pipeline runs once and exits).
+- **make test**: runs pytest in `tests/`.
+- **make report**: runs the Plotly dashboard (requires pipeline to have run and DB up).
+- **make clean**: removes containers, volumes, venv, caches.
 
-```bash
-docker compose up -d db fastapi_app
-# wait a few seconds, then:
-docker compose run --rm pipeline
-```
+## Deliverables Checklist
 
-**Reporting** (optional, local Python):
-   ```bash
-   pip install -r requirements.txt
-   export DB_URL=postgresql://postgres:Plan10boy%26@localhost:5432/MyDB
-   python -m reporting.dashboard
-   ```
+| Item | Location |
+|------|----------|
+| Makefile (setup, run, test, report, clean) | `Makefile` |
+| docker-compose.yml | `docker-compose.yml` |
+| .env.example | `.env.example` |
+| docs/architecture.md | `docs/architecture.md` |
+| docs/decisions.md | `docs/decisions.md` |
+| docs/er_diagram.png | `docs/er_diagram.png` |
+| README with setup instructions | This file |
+| Tests | `tests/` |
+| .env in .gitignore | `.gitignore` |
 
-## Local run (without Docker)
+## Components
 
-- Start Postgres and run the FastAPI app (e.g. `uvicorn` in `fastapi_app/`).
-- From the project root:
-  ```bash
-  pip install -r requirements.txt
-  python pipeline/orchestrator.py
-  ```
-- Optional: set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `API_HOST`, `API_PORT` (or `API_URL`) to match your environment.
+- **API**: FastAPI app in `fastapi_app/` — serves fake weather at `/fake_weather?days=N`.
+- **Ingestion**: `ingestion/` — Python scripts load CSV and API data into Postgres.
+- **Orchestration**: `pipeline/orchestrator.py` — waits for DB/API, drops prior dbt views, runs ingestion, runs `dbt run`.
+- **Database**: PostgreSQL 15 via Docker.
+- **dbt**: `dbt/` — staging and curated view `curated_weather` (schema `public_public`).
+- **Reports**: `reporting/dashboard.py` — Plotly line chart from `curated_weather`.
 
-## Repository layout
+## Configuration
+
+Copy `.env.example` to `.env` and set variables (e.g. `DB_PASSWORD`). Do not commit `.env`.  
+For Docker, defaults in `docker-compose.yml` work without a `.env` file.
+
+## Repository Layout
 
 | Path | Purpose |
 |------|--------|
-| `data/` | Public dataset (e.g. `DailyDelhiClimateTrain.csv`) |
-| `fastapi_app/` | FastAPI app that serves fake weather data |
-| `ingestion/` | Python scripts that load public CSV and FastAPI data into Postgres |
-| `pipeline/` | Orchestrator: runs ingestion then `dbt run` |
-| `dbt/` | dbt project: sources, staging models, curated view `curated_weather` |
-| `reporting/` | Example reporting (Plotly dashboard) |
-| `docker-compose.yml` | Defines `db`, `fastapi_app`, and `pipeline` services |
+| `data/` | Public dataset CSV |
+| `fastapi_app/` | Fake weather API |
+| `ingestion/` | Python ingestion scripts |
+| `pipeline/` | Orchestrator |
+| `dbt/` | dbt project (sources, staging, curated) |
+| `reporting/` | Dashboard script |
+| `tests/` | Pytest tests |
+| `docs/` | Architecture, decisions, ER diagram |
 
-## Design choices
+## Prerequisites (Docker)
 
-- **Single orchestration path**: The orchestrator runs Python ingestion then dbt so the curated dataset is always produced the same way.
-- **dbt for transformation**: All cleaning and curation (rounding, union, `source` column) live in dbt models; no ad-hoc SQL in the repo.
-- **Config via environment**: Database and API URLs are set by env vars so the same code works locally and in Docker.
+Docker Desktop must be **installed and running**. If you see `The system cannot find the file specified` for `dockerDesktopLinuxEngine`, start Docker Desktop and try again.
+
+## After Code Changes
+
+Rebuild the pipeline image so the container uses your changes:
+
+```bash
+docker compose up --build
+```
+
+Or: `docker compose build pipeline` then `docker compose up`.
